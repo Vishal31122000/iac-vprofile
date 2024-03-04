@@ -1,4 +1,4 @@
-module "eks" {
+module "  " {
   source  = "terraform-aws-modules/eks/aws"
   version = "19.19.1"
 
