@@ -54,6 +54,6 @@ jobs:
         continue-on-error: true
           
       - name: terraform plan status
-        if: ${{ failure() && steps.plan.outcome == 'failure' }}
-        run: exit 1
+          if: ${{ failure() && steps.plan.outcome == 'failure' }}
+          run: exit 1
 
