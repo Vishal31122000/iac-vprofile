@@ -2,6 +2,11 @@ provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
 }
+module "eks" {
+  source = "terraform-aws-modules/eks/aws"
+  # Add other required configuration parameters for the EKS module
+}
+
 
 provider "aws" {
   region = var.region
