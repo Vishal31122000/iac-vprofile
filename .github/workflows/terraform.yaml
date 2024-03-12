@@ -1,16 +1,17 @@
 name: "Vrofile IaC"
+
 on:
   push:
     branches:
       - main
       - stage
     paths:
-      - terraform/**
+      - 'terraform/**'
   pull_request:
     branches:
       - main
     paths:
-      - terraform/**
+      - 'terraform/**'
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -51,9 +52,7 @@ jobs:
       - name: terraform plan
         id: plan
         run: terraform plan -no-color -input=false -out planfile
-        continue-on-error: true
-          
-      - name: terraform plan status
-          if: ${{ failure() && steps.plan.outcome == 'failure' }}
-          run: exit 1
 
+      - name: terraform plan status
+        if: ${{ failure() && steps.plan.outcome == 'failure' }}
+        run: exit 1
