@@ -12,7 +12,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "buc-gitops"
+    bucket = "airbooks3"
     key    = "terraform.tfstate"
     region = "us-east-1"
   }
