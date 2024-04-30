@@ -22,48 +22,57 @@ env:
   
 jobs:
   terraform:
-    name: "Apply Terraform code changes"
+    name: "Apply terraform code changes"
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./terraform
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+      - name: Setup terraform with specified version on the runner
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.3
+        #  terraform_version: 1.6.3
 
       - name: Terraform init
+        id: init
         run: terraform init -backend-config="bucket=${BUCKET_TF_STATE}"
 
-      - name: Terraform fmt
+      - name: terraform fmt
+        id: fmt
         run: terraform fmt -check
 
-      - name: Terraform validate
+      - name: terraform validate
+        id: validate
         run: terraform validate
 
-      - name: Terraform plan
+      - name: terraform plan
+        id: plan
         run: terraform plan -no-color -input=false -out planfile
 
-      - name: Terraform plan status
+      - name: terraform plan status
         if: ${{ failure() && steps.plan.outcome == 'failure' }}
         run: exit 1
-
-      - name: Terraform apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false -parallelism=1 planfile
+      - name: Terraform Apply
+         id: apple
+         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+         run: terraform apply -auto-approve -input=false -parallelism=1 planfile
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+         uses: aws-actions/configure-aws-credentials@v1
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: ${{ env.AWS_REGION }}
      
       - name: Get Kube config file
-        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }} 
+         id: getconfig
+         if: steps.apple.outcome == 'success'
+         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }} 
 
       - name: Install Ingress controller
-        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.3/deploy/static/provider/aws/deploy.yaml
+         if: steps.apple.outcome == 'success' && steps.getconfig.outcome == 'success'
+         run: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.3/deploy/static/provider/aws/deploy.yaml
